@@ -51,6 +51,9 @@ public class FFIGeneratorPanel extends JPanel {
             JPanel jPanel = new JPanel(new FlowLayout());
             JRadioButton radWebIDL = new JRadioButton("Web IDL", true);
             JRadioButton radJQueryXML = new JRadioButton("jQuery XML Documentation");
+            ButtonGroup buttonGroup = new ButtonGroup();
+            buttonGroup.add(radWebIDL);
+            buttonGroup.add(radJQueryXML);
             jPanel.add(radWebIDL);
             jPanel.add(radJQueryXML);
             {
@@ -107,13 +110,55 @@ public class FFIGeneratorPanel extends JPanel {
             add(new JSeparator(JSeparator.HORIZONTAL), c);
         }
         {
-            JLabel jLabel = new JLabel("Target:");
+            JLabel jLabel = new JLabel("Target Folder:");
             {
                 GridBagConstraints c = new GridBagConstraints();
                 c.gridx = 0;
                 c.gridy = 6;
                 c.anchor = GridBagConstraints.WEST;
                 add(jLabel, c);
+            }
+        }
+        {
+            JTextField txtTargetFolder = new JTextField();
+            txtTargetFolder.setEditable(false);
+            {
+                GridBagConstraints c = new GridBagConstraints();
+                c.gridx = 0;
+                c.gridy = 7;
+                c.fill = GridBagConstraints.HORIZONTAL;
+                add(txtTargetFolder, c);
+            }
+        }
+        {
+            JButton btnTargetFolder = new JButton("Browse...");
+            {
+                JPanel jPanel = new JPanel(new FlowLayout());
+                jPanel.add(btnTargetFolder);
+                GridBagConstraints c = new GridBagConstraints();
+                c.gridx = 0;
+                c.gridy = 8;
+                c.anchor = GridBagConstraints.WEST;
+                add(jPanel, c);
+            }
+        }
+        {
+            GridBagConstraints c = new GridBagConstraints();
+            c.gridx = 0;
+            c.gridy = 9;
+            c.fill = GridBagConstraints.HORIZONTAL;
+            add(new JSeparator(JSeparator.HORIZONTAL), c);
+        }
+        {
+            JButton btnGenerateFFI = new JButton("Generate FFI");
+            {
+                JPanel jPanel = new JPanel(new FlowLayout());
+                jPanel.add(btnGenerateFFI);
+                GridBagConstraints c = new GridBagConstraints();
+                c.gridx = 0;
+                c.gridy = 10;
+                c.anchor = GridBagConstraints.WEST;
+                add(jPanel, c);
             }
         }
     }
