@@ -1,8 +1,10 @@
 package org.highj.js_monad_ffi_generator;
 
 import org.highj.data.List;
+import org.highj.data.Maybe;
 import org.highj.data.stateful.Effect0;
 import org.highj.data.stateful.Effect1;
+import org.highj.data.stateful.SafeIO;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -15,9 +17,13 @@ import java.net.URL;
 import java.util.Arrays;
 
 public class FFIGeneratorPanel extends JPanel {
-    private JFileChooser jFileChooser = new JFileChooser();
+    private JFileChooser sourceFileChooser = new JFileChooser();
+    private JFileChooser targetFileChooser = new JFileChooser();
     private Effect1<List<URI>> addUrisEffect;
     private Effect0 removeSelectedEffect;
+    private SafeIO<List<URI>> getUrisIO;
+    private Effect1<File> setTargetFolderEffect;
+    private SafeIO<Maybe<File>> getTargetFolderOpIO;
 
     public FFIGeneratorPanel() {
         init();
@@ -49,7 +55,8 @@ public class FFIGeneratorPanel extends JPanel {
         setLayout(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         webIDLSelected();
-        jFileChooser.setMultiSelectionEnabled(true);
+        sourceFileChooser.setMultiSelectionEnabled(true);
+        targetFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         {
             JLabel jLabel = new JLabel("Generate FFI from:");
             {
@@ -108,6 +115,15 @@ public class FFIGeneratorPanel extends JPanel {
                     sourcesModel.addElement(uri);
                 }
             };
+            getUrisIO = () -> {
+                List<URI> uris = List.Nil();
+                int n = sourcesModel.getSize();
+                for (int i = 0; i < n; ++i) {
+                    uris = List.Cons(sourcesModel.get(i), uris);
+                }
+                uris = uris.reverse();
+                return uris;
+            };
             removeSelectedEffect = () -> {
                 int[] indices = lstSources.getSelectedIndices();
                 Arrays.sort(indices);
@@ -155,6 +171,15 @@ public class FFIGeneratorPanel extends JPanel {
         {
             JTextField txtTargetFolder = new JTextField();
             txtTargetFolder.setEditable(false);
+            class Util {
+                private Maybe<File> targetFolderOp = Maybe.Nothing();
+            }
+            final Util util = new Util();
+            setTargetFolderEffect = (File file) -> {
+                util.targetFolderOp = Maybe.Just(file);
+                txtTargetFolder.setText(file.getAbsolutePath());
+            };
+            getTargetFolderOpIO = () -> util.targetFolderOp;
             {
                 GridBagConstraints c = new GridBagConstraints();
                 c.gridx = 0;
@@ -165,6 +190,7 @@ public class FFIGeneratorPanel extends JPanel {
         }
         {
             JButton btnTargetFolder = new JButton("Browse...");
+            btnTargetFolder.addActionListener(e -> browseTargetClicked());
             {
                 JPanel jPanel = new JPanel(new FlowLayout());
                 jPanel.add(btnTargetFolder);
@@ -184,6 +210,7 @@ public class FFIGeneratorPanel extends JPanel {
         }
         {
             JButton btnGenerateFFI = new JButton("Generate FFI");
+            btnGenerateFFI.addActionListener(e -> generateFFIClicked());
             {
                 JPanel jPanel = new JPanel(new FlowLayout());
                 jPanel.add(btnGenerateFFI);
@@ -200,18 +227,18 @@ public class FFIGeneratorPanel extends JPanel {
     private static final FileNameExtensionFilter xmlFileFilter = new FileNameExtensionFilter("XML Files (*.xml)", "xml");
 
     private void webIDLSelected() {
-        jFileChooser.resetChoosableFileFilters();
-        jFileChooser.setFileFilter(idlFileFilter);
+        sourceFileChooser.resetChoosableFileFilters();
+        sourceFileChooser.setFileFilter(idlFileFilter);
     }
 
     private void jqueryXMLSelected() {
-        jFileChooser.resetChoosableFileFilters();
-        jFileChooser.setFileFilter(xmlFileFilter);
+        sourceFileChooser.resetChoosableFileFilters();
+        sourceFileChooser.setFileFilter(xmlFileFilter);
     }
 
     private void addFilesClicked() {
-        if (jFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File[] files = jFileChooser.getSelectedFiles();
+        if (sourceFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File[] files = sourceFileChooser.getSelectedFiles();
             addUrisEffect.run(List.of(files).map(File::toURI));
         }
     }
@@ -229,5 +256,15 @@ public class FFIGeneratorPanel extends JPanel {
 
     private void removeSelectedClicked() {
         removeSelectedEffect.run();
+    }
+
+    private void browseTargetClicked() {
+        if (targetFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            setTargetFolderEffect.run(targetFileChooser.getSelectedFile());
+        }
+    }
+
+    private void generateFFIClicked() {
+
     }
 }
