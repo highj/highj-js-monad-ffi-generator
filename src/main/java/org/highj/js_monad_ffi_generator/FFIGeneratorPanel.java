@@ -1,10 +1,20 @@
 package org.highj.js_monad_ffi_generator;
 
+import org.highj.data.List;
+import org.highj.data.stateful.Effect0;
+import org.highj.data.stateful.Effect1;
+
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.io.File;
 import java.net.URI;
+import java.util.Arrays;
 
 public class FFIGeneratorPanel extends JPanel {
+    private JFileChooser jFileChooser = new JFileChooser();
+    private Effect1<List<URI>> addUrisEffect;
+    private Effect0 removeSelectedEffect;
 
     public FFIGeneratorPanel() {
         init();
@@ -35,6 +45,8 @@ public class FFIGeneratorPanel extends JPanel {
         //  ``````````````
         setLayout(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        webIDLSelected();
+        jFileChooser.setMultiSelectionEnabled(true);
         {
             JLabel jLabel = new JLabel("Generate FFI from:");
             {
@@ -51,6 +63,8 @@ public class FFIGeneratorPanel extends JPanel {
             JPanel jPanel = new JPanel(new FlowLayout());
             JRadioButton radWebIDL = new JRadioButton("Web IDL", true);
             JRadioButton radJQueryXML = new JRadioButton("jQuery XML Documentation");
+            radWebIDL.addActionListener(e -> webIDLSelected());
+            radJQueryXML.addActionListener(e -> jqueryXMLSelected());
             ButtonGroup buttonGroup = new ButtonGroup();
             buttonGroup.add(radWebIDL);
             buttonGroup.add(radJQueryXML);
@@ -75,7 +89,8 @@ public class FFIGeneratorPanel extends JPanel {
             }
         }
         {
-            JList<URI> lstSources = new JList<>();
+            DefaultListModel<URI> sourcesModel = new DefaultListModel<>();
+            JList<URI> lstSources = new JList<>(sourcesModel);
             {
                 GridBagConstraints c = new GridBagConstraints();
                 c.gridx = 0;
@@ -85,12 +100,26 @@ public class FFIGeneratorPanel extends JPanel {
                 c.fill = GridBagConstraints.BOTH;
                 add(new JScrollPane(lstSources), c);
             }
+            addUrisEffect = (List<URI> uris) -> {
+                for (URI uri : uris) {
+                    sourcesModel.addElement(uri);
+                }
+            };
+            removeSelectedEffect = () -> {
+                int[] indices = lstSources.getSelectedIndices();
+                Arrays.sort(indices);
+                for (int i = indices.length-1; i >= 0; --i) {
+                    sourcesModel.remove(indices[i]);
+                }
+            };
         }
         {
             JPanel jPanel = new JPanel(new FlowLayout());
             JButton btnAddFiles = new JButton("Add Files...");
             JButton btnAddURL = new JButton("Add URL...");
             JButton btnRemoveSelected = new JButton("Remove Selected");
+            btnAddFiles.addActionListener(e -> addFilesClicked());
+            btnRemoveSelected.addActionListener(e -> removeSelectedClicked());
             jPanel.add(btnAddFiles);
             jPanel.add(btnAddURL);
             jPanel.add(btnRemoveSelected);
@@ -161,5 +190,29 @@ public class FFIGeneratorPanel extends JPanel {
                 add(jPanel, c);
             }
         }
+    }
+
+    private static final FileNameExtensionFilter idlFileFilter = new FileNameExtensionFilter("IDL Files (*.idl)", "idl");
+    private static final FileNameExtensionFilter xmlFileFilter = new FileNameExtensionFilter("XML Files (*.xml)", "xml");
+
+    private void webIDLSelected() {
+        jFileChooser.resetChoosableFileFilters();
+        jFileChooser.setFileFilter(idlFileFilter);
+    }
+
+    private void jqueryXMLSelected() {
+        jFileChooser.resetChoosableFileFilters();
+        jFileChooser.setFileFilter(xmlFileFilter);
+    }
+
+    private void addFilesClicked() {
+        if (jFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File[] files = jFileChooser.getSelectedFiles();
+            addUrisEffect.run(List.of(files).map(File::toURI));
+        }
+    }
+
+    private void removeSelectedClicked() {
+        removeSelectedEffect.run();
     }
 }
