@@ -8,7 +8,10 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 
 public class FFIGeneratorPanel extends JPanel {
@@ -119,6 +122,7 @@ public class FFIGeneratorPanel extends JPanel {
             JButton btnAddURL = new JButton("Add URL...");
             JButton btnRemoveSelected = new JButton("Remove Selected");
             btnAddFiles.addActionListener(e -> addFilesClicked());
+            btnAddURL.addActionListener(e -> addUrlClicked());
             btnRemoveSelected.addActionListener(e -> removeSelectedClicked());
             jPanel.add(btnAddFiles);
             jPanel.add(btnAddURL);
@@ -209,6 +213,17 @@ public class FFIGeneratorPanel extends JPanel {
         if (jFileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File[] files = jFileChooser.getSelectedFiles();
             addUrisEffect.run(List.of(files).map(File::toURI));
+        }
+    }
+
+    private void addUrlClicked() {
+        String url = JOptionPane.showInputDialog(this, "Enter or paste URL:");
+        try {
+            URL url2 = new URL(url);
+            addUrisEffect.run(List.of(url2.toURI()));
+        } catch (MalformedURLException | URISyntaxException e) {
+            JOptionPane.showMessageDialog(this, "Invalid URL", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
