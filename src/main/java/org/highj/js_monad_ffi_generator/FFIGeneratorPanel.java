@@ -24,6 +24,7 @@ public class FFIGeneratorPanel extends JPanel {
     private SafeIO<List<URI>> getUrisIO;
     private Effect1<File> setTargetFolderEffect;
     private SafeIO<Maybe<File>> getTargetFolderOpIO;
+    private Effect0 generateFFIEffect = () -> {};
 
     public FFIGeneratorPanel() {
         init();
@@ -223,6 +224,18 @@ public class FFIGeneratorPanel extends JPanel {
         }
     }
 
+    public List<URI> getSourceUris() {
+        return getUrisIO.run();
+    }
+
+    public Maybe<File> getTargetFolder() {
+        return getTargetFolderOpIO.run();
+    }
+
+    public void setGenerateFFIEffect(Effect0 generateFFIEffect) {
+        this.generateFFIEffect = generateFFIEffect;
+    }
+
     private static final FileNameExtensionFilter idlFileFilter = new FileNameExtensionFilter("IDL Files (*.idl)", "idl");
     private static final FileNameExtensionFilter xmlFileFilter = new FileNameExtensionFilter("XML Files (*.xml)", "xml");
 
@@ -265,6 +278,6 @@ public class FFIGeneratorPanel extends JPanel {
     }
 
     private void generateFFIClicked() {
-
+        generateFFIEffect.run();
     }
 }
